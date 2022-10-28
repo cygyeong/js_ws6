@@ -37,7 +37,7 @@
 
   <hr>
   {% if request.user.is_authenticated %}
-    <form id="comment-form" data-article-id="{{ article.pk }}">
+    <form action="{% url 'articles:comments_create' article.pk %}" method="POST">
       {% csrf_token %}
       {{ comment_form }}
       <input type="submit">
@@ -57,40 +57,6 @@
     form.addEventListener('submit', function (event) {
       event.preventDefault()
 	// 이곳에 코드를 작성하세요
-      const newForm = new FormData()
-      const articleId = {{article.pk}}
-      newForm.append('content', input.value)
-      axios({
-        method: 'post',
-        url: `/articles/${articleId}/comments/`, 
-        headers: {'X-CSRFToken' : csrftoken},
-        data: newForm, 
-      })
-        .then((response)=>{
-            const ul = document.querySelector('ul')
-            const p = document.querySelector('ul > p')
-            const newLi = document.createElement('li')
-            newLi.setAttribute("id","comment-list")
-            const { comment_pk, article_pk } = response.data
-            if (p){
-              p.remove()
-            }
-            newLi.innerHTML = `
-              ${response.data.comment_user} - <span>${input.value}</span>
-              <form action="/articles/${article_pk}/comments/${comment_pk}/delete/" method="POST" class="d-inline">
-              {% csrf_token %}
-              <input type="submit" value="DELETE">
-             </form>
-            `
-            ul.appendChild(newLi)
-            input.value=''
-        })
-        .catch((error)=>{
-          console.log(error.response)
-        })
-
-        
-
     })
 
   </script>
