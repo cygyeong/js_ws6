@@ -37,7 +37,7 @@
 
   <hr>
   {% if request.user.is_authenticated %}
-    <form action="{% url 'articles:comments_create' article.pk %}" method="POST">
+    <form data-article-pk={{ article.pk }}  data-user-name={{ user.username }}  id="comment-form">
       {% csrf_token %}
       {{ comment_form }}
       <input type="submit">
@@ -54,8 +54,58 @@
     const input = document.querySelector('[name=content]')
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
+    // 댓글 생성
     form.addEventListener('submit', function (event) {
       event.preventDefault()
+      const data = new FormData()
+      data.append('content', input.value)
+      
+      const article_pk = form.dataset.articlePk
+      const user_name = form.dataset.userName
+
+      axios({
+        method: 'post',
+        url: `http://127.0.0.1:8000/articles/${ article_pk }/comments/`,
+        headers: {'X-CSRFToken': csrftoken},
+        data,
+      })
+      .then((response) => {
+        const li = document.createElement("li")
+        
+        li.innerText = `${user_name} - ${input.value} `
+        
+        const ul = document.querySelector("ul")
+        
+        input.value = ''
+        
+        const deleteBtn = document.createElement("input")
+        deleteBtn.value = "DELETE"
+        deleteBtn.type = "submit"
+        
+        const delForm = document.createElement("form")
+        
+        const inputElem = document.createElement("input")
+
+        inputElem.type = 'hidden'
+        inputElem.name = 'csrfmiddlewaretoken'
+        inputElem.value = '{{ csrf_token }}'
+        
+        delForm.append(inputElem) 
+        
+        delForm.action = `http://127.0.0.1:8000/articles/${article_pk}/comments/${response.data.commentPk}/delete/`
+        delForm.method = 'post'
+        delForm.append(deleteBtn)
+        delForm.classList.add("d-inline")
+
+        li.append(delForm)
+        li.setAttribute('id', 'comment-list')
+        ul.append(li)
+        
+      })
+      .catch((error) => {
+        console.log(error)
+      })
+
 	// 이곳에 코드를 작성하세요
     })
 
