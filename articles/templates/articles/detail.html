@@ -19,6 +19,7 @@
   <a href="{% url 'articles:index' %}">[back]</a>
   <hr>
   <h4>댓글 목록</h4>
+  <p><b>{{ comments.count }}개의 댓글이 있습니다.</b></p>
   <ul>
     {% for comment in comments %}
       <li id="comment-list">
@@ -31,7 +32,7 @@
         {% endif %}
       </li>
     {% empty %}
-      <p>댓글이 없어요..</p>
+      <p id="empty-comment">댓글이 없어요..</p>
     {% endfor %}
   </ul>
 
@@ -101,6 +102,12 @@
         li.setAttribute('id', 'comment-list')
         ul.append(li)
         
+        const emptyComment = document.querySelector("#empty-comment")
+        if (emptyComment){
+
+          emptyComment.remove()
+        }
+
       })
       .catch((error) => {
         console.log(error)
