@@ -99,20 +99,6 @@ def comments_create(request, pk):
             return JsonResponse(context)
     return redirect('accounts:login')
 
-@require_POST
-def comments_update(request, article_pk, comment_pk):
-    if request.user.is_authenticated:
-        comment = get_object_or_404(Comment, pk=comment_pk)
-        if request.user == comment.user:
-            comment_form = CommentForm(request.POST, instance=comment)
-            if comment_form.is_valid():
-                comment_form.save()
-            context ={
-                'article_pk' : article_pk,
-                'comment_pk' : comment_pk,
-            }
-            return JsonResponse(context, status=200)
-    return redirect('accounts:login')
 
 @require_POST
 def comments_delete(request, article_pk, comment_pk):
