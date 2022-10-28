@@ -89,7 +89,11 @@ def comments_create(request, pk):
             comment.article = article
             comment.user = request.user
             comment.save()
-        return redirect('articles:detail', article.pk)
+            data ={
+                'articlePk' : article.pk,
+                'commentPk' : comment.pk,
+            }
+            return JsonResponse(data)
     return redirect('accounts:login')
 
 
