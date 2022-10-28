@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>DETAIL</h2>
+  <h3>{{ article.pk }} 번째 글</h3>
+  <hr>
+  <p>제목 : {{ article.title }}</p>
+  <p>내용 : {{ article.content }}</p>
+  <p>작성시각 : {{ article.created_at }}</p>
+  <p>수정시각 : {{ article.updated_at }}</p>
+  <hr>
+  {% if user == article.user %}
+    <a href="{% url 'articles:update' article.pk %}">[UPDATE]</a>
+    <form action="{% url 'articles:delete' article.pk %}" method="POST">
+      {% csrf_token %}
+      <input type="submit" value="DELETE">
+    </form>
+  {% endif %}
+  <a href="{% url 'articles:index' %}">[back]</a>
+  <hr>
+  <h4>댓글 목록</h4>
+  <p>{{ comments|length}}개의 댓글이 있습니다.</p>
+  <ul>
+    {% for comment in comments %}
+      <li id="comment-list" data-comment-pk="{{ comment.pk }}">
+        {{ comment.user }} - {{ comment.content }}
+        {% if user == comment.user %}
+          <form action="{% url 'articles:comments_delete' article.pk comment.pk %}" method="POST" class="d-inline">
+            {% csrf_token %}
+            <input type="submit" value="DELETE">
+          </form>
+          <button id="comment-update">수정</button>
+        {% endif %}
+      </li>
+    {% empty %}
+      <p>댓글이 없어요..</p>
+    {% endfor %}
+  </ul>
+
+  <hr>
+  {% if request.user.is_authenticated %}
+    <form id="comment-form" data-article-id="{{ article.pk }}">
+      {% csrf_token %}
+      {{ comment_form }}
+      <input type="submit">
+    </form>
+  {% else %}
+    <a href="{% url 'accounts:login' %}">[댓글을 작성하려면 로그인하세요.]</a>
+  {% endif %}
+{% endblock content %}
+
+{% block script %}
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    const form = document.querySelector('#comment-form')
+    const input = document.querySelector('[name=content]')
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
+
+    form.addEventListener('submit', function (event) {
+      event.preventDefault()
+	// 이곳에 코드를 작성하세요
+      const newForm = new FormData()
+      const articleId = {{article.pk}}
+      newForm.append('content', input.value)
+      axios({
+        method: 'post',
+        url: `/articles/${articleId}/comments/`, 
+        headers: {'X-CSRFToken' : csrftoken},
+        data: newForm, 
+      })
+        .then((response)=>{
+            const ul = document.querySelector('ul')
+            const p = document.querySelector('ul > p')
+            const newLi = document.createElement('li')
+            newLi.setAttribute("id","comment-list")
+            const { comment_pk, article_pk } = response.data
+            if (p){
+              p.remove()
+            }
+            newLi.innerHTML = `
+              ${response.data.comment_user} - <span>${input.value}</span>
+              <form action="/articles/${article_pk}/comments/${comment_pk}/delete/" method="POST" class="d-inline">
+              {% csrf_token %}
+              <input type="submit" value="DELETE">
+             </form>
+             <button id="comment-update">수정</button>
+            `
+            ul.appendChild(newLi)
+            input.value=''
+        })
+        .catch((error)=>{
+          console.log(error.response)
+        })
+    })
+
+    const updateTags = document.querySelectorAll("#comment-update")
+    
+
+    updateTags.forEach(btn=>{
+      btn.addEventListener('click', (event)=>{
+        event.preventDefault()
+        const commentLi = btn.parentNode
+        const { commentPk } = commentLi.dataset
+        const input = document.createElement('input')
+
+        input.value = commentLi.childNodes[1].innerText
+
+        input.name = 'content'
+
+        const updateBtn = document.createElement('button')
+        updateBtn.innerText = 'update'
+
+        updateBtn.addEventListener('click', (event)=>{
+          let data = new FormData()
+          data.append('content', input.value)
+          axios({
+            method: 'post',
+            url: `http://127.0.0.1:8000/articles/{{article.pk}}/comments/${commentPk}/update/`,
+            data: data,
+            headers: {'X-CSRFToken' : csrftoken},
+          })
+            .then((response)=>{
+              console.log(response)
+              const { commentPk, articlePk } = response.data
+              commentLi.innerHTML = `
+                {{ request.user.username }} - <span>${input.value}</span>
+                <form action="/articles/${articlePk}/comments/${commentPk}/delete/" method="POST" class="d-inline">
+                  {% csrf_token %}
+                  <input type="submit" value="DELETE">
+                 </form>
+              `
+              commentLi.append(btn)
+
+            })
+        })
+
+        commentLi.innerText = ''
+        commentLi.append(input, updateBtn)
+      })
+    })
+
+
+  </script>
+{% endblock script %}
+
